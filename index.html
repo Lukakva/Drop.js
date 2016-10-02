@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Example Drop.js initialization</title>
+</head>
+<style type="text/css">
+	html, body {
+		height: 100%;
+		width: 100%;
+		margin: 0;
+		overflow: hidden;
+	}
+
+	html body div {
+		-webkit-box-sizing: border-box;
+		-moz-box-sizing: border-box;
+		box-sizing: border-box;
+	}
+
+	#drop {
+		height: 70%;
+		width: 35%;
+		font-family: Helvetica;
+		border: 10px dashed black;
+		background: gray;
+		font-size: 20px;
+		font-weight: bold;
+		float: left;
+		position: relative;
+	}
+
+	#drop span {
+		position: absolute;
+		top: 50%;
+		left: 0;
+		width: 100%;
+		text-align: center;
+
+		-webkit-transform: translateY(-50%);
+		-moz-transform: translateY(-50%);
+		-ms-transform: translateY(-50%);
+		-o-transform: translateY(-50%);
+		transform: translateY(-50%);
+	}
+
+	h2, h4 {
+		text-align: center;
+		font-family: Helvetica;
+	}
+
+	#stats-wrapper {
+		float: left;
+		height: 60%;
+		width: 65%;
+		padding-left: 10px;
+	}
+
+	#stats-wrapper span {
+		font-size: 20px;
+		font-weight: bold;
+		font-family: Helvetica;
+	}
+
+	#stats {
+		width: 100%;
+		height: 100%;
+		float: left;
+		margin-top: 10px;
+		font-family: Helvetica;
+		font-size: 16px;
+		overflow: auto;
+	}
+
+	.clear {
+		float: right;
+		margin-right: 10px;
+		font-size: Helvetica;
+		text-decoration: none;
+		font-family: Helvetica;
+	}
+</style>
+<body>
+	<h2>Example usage of Drop.js</h2>
+	<h4>Drop files, links, text or images from other tabs here</h4>
+	<div id="drop">
+		<span>Drop items here</span>
+	</div>
+	<div id="stats-wrapper">
+		<span>Stats: </span>
+		<a class="clear" href="#" onclick="window.clear();">Clear output</a>
+		<pre id="stats"></pre>
+	</div>
+</body>
+<script type="text/javascript" src="src/drop.js"></script>
+<script type="text/javascript">
+
+var stats = document.getElementById("stats");
+var line = "-------------------------------------------";
+
+function log(str) {
+	str = str || "";
+	stats.innerHTML += str + "\n";
+	stats.scrollTop = stats.scrollHeight;
+}
+
+function clear() {
+	stats.innerHTML = "";
+}
+
+function format(size) {
+	var sizes = ["B", "KB", "MB", "GB"];
+	var index = 0;
+
+	while (size >= 1024 && index + 1 < sizes.length) {
+		size /= 1024;
+		index++;
+	}
+
+	size = size.toFixed(2);
+
+	// sometimes toFixed returns 1.00 if number is already round
+	while (size.slice(-1) == "0" || size.slice(-1) == ".") {
+		size = size.slice(0, -1);
+	}
+
+	return size + " " + sizes[index];
+}
+
+var dropzone = new Drop({
+	node: "#drop",
+	dropEffect: "copy",
+});
+
+// max files to display on page (to prevent rendering lag)
+var maxFileCount = 300;
+var isFirstDragover = true;
+
+dropzone.ondragenter = function(types, e) {
+	log("\n");
+	log("Dragging Entered");
+};
+
+dropzone.ondragover = function(types, e) {
+	if (isFirstDragover) {
+		log("Dragging Over");
+		isFirstDragover = false;
+	}
+};
+
+dropzone.ondragleave = function(e) {
+	isFirstDragover = true;
+	log("Dragging Left");
+};
+
+dropzone.ondrop = function(dropData, e) {
+	var files = dropData.files;
+	var strings = dropData.strings;
+
+	var count = files.length || Object.keys(strings).length;
+
+	log("Drop");
+	log(line);
+	log(); // log a line
+	log("Dropped items count: " + count);
+	log("Processing items...");
+	log();
+
+	if (count > maxFileCount) {
+		log("Displaying only first " + maxFileCount + " files");
+		log("\n");
+	}
+
+	// when file was dropped with lots of recursive directories,
+	// the whole function lagged and the code above didn't actually log anything
+	// it waited for this loop to end (i guess rendering doesn't occure if you overwrite innerHTML value fast enough)
+	setTimeout(function() {
+		for (var i = 0; i < files.length && i < maxFileCount; i++) {
+			var fileInfo = files[i];
+			var file = fileInfo.file;
+
+			var str = 
+				  "File Path: "  + fileInfo.path +
+				  "\n" +
+				  "File Size: " + format(file.size) +
+				  "\n" +
+				  "File Type: " + (file.type || "Unknown") +
+				  "\n";
+
+			// only write once to the pre tag
+			log(str);
+		}
+
+		for (var stringKey in strings) {
+			var string = strings[stringKey];
+
+			var str = 
+				"String Type: " + string.type +
+				"\n" +
+				"String Value: " + string.value.replace(/</g, "&lt;").replace(/>/g, "&gt;") +
+				"\n";
+
+			log(str);
+		}
+
+		log(line);
+	}, 100);
+}
+
+// if file is dropped outside of dropzone
+document.ondrop =
+document.ondragover = function(e) {
+	e.preventDefault();
+}
+
+</script>
+</html>
