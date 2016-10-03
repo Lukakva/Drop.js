@@ -25,7 +25,7 @@ var dropzone = new Drop({
 The dropData argument in ondrop method is the important stuff. It contains all the files, or strings it could retrieve from the event object. It contains 2 properties, `files` and `strings`.
 
 Files property's value is an array containing all the files that occured in the drag operation.
-Items property's value is an object containing value for every mimeType that was dropped on the node. (example and further explanations below).
+Strings property's value is an object containing value for every mimeType that was dropped on the node. (example and further explanations below).
 
 # Example dropObject
 ```javascript
@@ -36,7 +36,7 @@ dropObject = {
         // if in chrome, full relative path
         path: "Folder/Subfolder/Image.png",
     }],
-    items: {
+    strings: {
         plain: {
             type: "text/plain",
             // when URL is dropped, the plain value is also present
